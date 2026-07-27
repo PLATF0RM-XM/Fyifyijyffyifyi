@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>لوحة التحكم | XM Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050507;--surface:#0d0d0f;--surface2:#141416;--surface3:#1c1c1f;
+  --border:rgba(212,175,55,0.08);--border2:rgba(212,175,55,0.18);--border3:rgba(212,175,55,0.35);
+  --text:#f5f0e8;--muted:#7a7060;--muted2:#5a5248;
+  --gold:#d4af37;--gold2:#f0c040;--gold3:#b8962a;
+  --green:#2ecc71;--red:#e74c3c;--orange:#f39c12;
+  --r:10px;--r2:16px;--r3:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 50% 40% at 80% 0%,rgba(212,175,55,0.05) 0%,transparent 60%);
+  pointer-events:none;}
+body::after{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(212,175,55,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(212,175,55,0.02) 1px,transparent 1px);
+  background-size:60px 60px;pointer-events:none;}
+
+/* LOGIN */
+#loginWrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r3);padding:40px 28px;position:relative;}
+.login-card::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:50%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.login-logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px;}
+.logo-emblem{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--gold3),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#050507;box-shadow:0 4px 16px rgba(212,175,55,0.35);}
+.logo-name{font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--gold);letter-spacing:2px;}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;}
+.login-title{text-align:center;font-family:'Cinzel',serif;font-size:17px;font-weight:600;color:var(--text);margin-bottom:24px;}
+.login-divider{width:40px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 24px;}
+
+/* FIELDS */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:9px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:7px;}
+.field input,.field select{width:100%;padding:13px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:'Tajawal',sans-serif;font-size:14px;outline:none;transition:all .25s;}
+.field input:focus,.field select:focus{border-color:var(--border3);background:rgba(212,175,55,0.03);}
+.field input::placeholder{color:var(--muted2);}
+.field select option{background:#0d0d0f;}
+
+/* BUTTONS */
+.btn-gold{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold3),var(--gold2));border:none;border-radius:var(--r2);color:#050507;font-family:'Tajawal',sans-serif;font-size:15px;font-weight:900;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(212,175,55,0.2);margin-top:4px;letter-spacing:.5px;}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(212,175,55,0.35);}
+.btn-danger{width:100%;padding:13px;background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.18);border-radius:var(--r2);color:var(--red);font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:10px;}
+.btn-danger:hover{background:rgba(231,76,60,0.12);}
+.btn-sm{padding:5px 12px;border-radius:8px;font-family:'Tajawal',sans-serif;font-size:11px;cursor:pointer;transition:all .2s;border:1px solid;}
+.btn-view{background:rgba(212,175,55,0.08);border-color:rgba(212,175,55,0.2);color:var(--gold);}
+.btn-view:hover{background:rgba(212,175,55,0.16);}
+.btn-arch{background:rgba(243,156,18,0.08);border-color:rgba(243,156,18,0.2);color:var(--orange);}
+.btn-del{background:rgba(231,76,60,0.08);border-color:rgba(231,76,60,0.2);color:var(--red);margin-right:4px;}
+.btn-rst{background:rgba(46,204,113,0.08);border-color:rgba(46,204,113,0.2);color:var(--green);}
+.btn-sm-outline{background:transparent;border:1px solid var(--border2);border-radius:var(--r);padding:7px 16px;color:var(--muted);font-family:'Tajawal',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-sm-outline:hover{border-color:var(--border3);color:var(--text);}
+.btn-add{padding:11px 20px;background:linear-gradient(135deg,var(--gold3),var(--gold2));border:none;border-radius:var(--r2);color:#050507;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:900;cursor:pointer;margin-bottom:16px;transition:all .2s;box-shadow:0 3px 12px rgba(212,175,55,0.2);}
+.btn-add:hover{box-shadow:0 5px 18px rgba(212,175,55,0.35);transform:translateY(-1px);}
+
+/* PANEL */
+#panel{display:none;position:relative;z-index:1;}
+.admin-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(5,5,7,0.92);backdrop-filter:blur(24px);position:sticky;top:0;z-index:10;}
+.panel-body{max-width:760px;margin:0 auto;padding:24px 16px 60px;}
+
+.sec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r3);padding:24px 20px;margin-bottom:16px;position:relative;overflow:hidden;}
+.sec-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);}
+.sec-head{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:4px;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.sec-head::before{content:'';width:12px;height:1px;background:linear-gradient(90deg,var(--gold),transparent);}
+.sec-head::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.form-grid{grid-template-columns:1fr;}}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 12px;text-align:center;font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--border);}
+td{padding:10px 12px;text-align:center;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);}
+td.deal-id{color:var(--gold);font-family:'Cinzel',serif;font-size:11px;font-weight:600;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(212,175,55,0.02);}
+.no-proof{font-size:10px;color:var(--muted2);}
+.st-sel{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:8px;font-family:'Tajawal',sans-serif;font-size:11px;cursor:pointer;outline:none;}
+.st-sel option{background:#0d0d0f;}
+.st-sel:focus{border-color:var(--border3);}
+
+/* STATS ROW */
+.stats-mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
+.sm-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 12px;text-align:center;}
+.sm-num{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--gold);}
+.sm-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:3px;}
+
+/* PKG INPUT */
+.pkg-inp{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'Tajawal',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.pkg-inp:focus{border-color:var(--border3);}
+.pkg-lbl{font-size:9px;color:var(--muted);display:block;margin-bottom:6px;letter-spacing:2px;}
+
+/* MODAL */
+#modal{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.92);backdrop-filter:blur(16px);align-items:center;justify-content:center;padding:20px;}
+.modal-in{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);padding:24px;max-width:90%;max-height:90vh;overflow:auto;text-align:center;position:relative;}
+.modal-in::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:40%;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.modal-in img{max-width:100%;max-height:70vh;border-radius:var(--r);}
+.btn-close-modal{margin-top:16px;padding:10px 28px;background:transparent;border:1px solid var(--border2);color:var(--gold);border-radius:var(--r);font-family:'Tajawal',sans-serif;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-close-modal:hover{background:rgba(212,175,55,0.08);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginWrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-emblem">XM</div>
+      <div>
+        <div class="logo-name">XM PLATFORM</div>
+        <div class="logo-sub">Admin Panel</div>
+      </div>
+    </div>
+    <div class="login-title">تسجيل الدخول</div>
+    <div class="login-divider"></div>
+    <div class="field"><label>البريد الإلكتروني</label><input id="email" type="email" placeholder="admin@xm.com"></div>
+    <div class="field"><label>كلمة المرور</label><input id="password" type="password" placeholder="••••••••"></div>
+    <button class="btn-gold" onclick="login()">دخول إلى لوحة التحكم</button>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="panel">
+
+  <div class="admin-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-emblem" style="width:34px;height:34px;font-size:11px">XM</div>
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--gold)">XM PLATFORM</div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:3px">ADMIN</div>
+      </div>
+    </div>
+    <button class="btn-sm-outline" onclick="auth.signOut().then(()=>{document.getElementById('panel').style.display='none';document.getElementById('loginWrap').style.display='flex';})">خروج</button>
+  </div>
+
+  <div class="panel-body">
+
+    <!-- Stats -->
+    <div class="stats-mini" id="statsRow">
+      <div class="sm-item"><div class="sm-num" id="stDeals">—</div><div class="sm-lbl">صفقة</div></div>
+      <div class="sm-item"><div class="sm-num" id="stSubs">—</div><div class="sm-lbl">اشتراك</div></div>
+      <div class="sm-item"><div class="sm-num" id="stPkgs">—</div><div class="sm-lbl">باقة</div></div>
+    </div>
+
+    <!-- Deal Form -->
+    <div class="sec-card">
+      <div class="sec-head">إدارة الصفقة</div>
+      <div class="form-grid">
+        <div class="field"><label>رقم الصفقة</label><input id="dealId" placeholder="XM123456"></div>
+        <div class="field"><label>اسم العميل</label><input id="name" placeholder="محمد أحمد"></div>
+        <div class="field"><label>مبلغ الاستثمار</label><input id="investment" placeholder="1000" type="number"></div>
+        <div class="field"><label>الأرباح</label><input id="profit" placeholder="5000" type="number"></div>
+        <div class="field"><label>رقم الاستلام / المحفظة</label><input id="receipt" placeholder="01234567890"></div>
+        <div class="field"><label>مبلغ الإيداع</label><input id="fees" placeholder="500" type="number"></div>
+        <div class="field"><label>مدة السداد (دقايق)</label><input id="hours" placeholder="60" type="number"></div>
+        <div class="field"><label>حالة الدفع</label>
+          <select id="paymentOpen">
+            <option value="true">✅ الدفع مفتوح</option>
+            <option value="false">🔒 الدفع مغلق</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-gold" onclick="saveDeal()">💾 حفظ / تعديل الصفقة</button>
+      <button class="btn-danger" onclick="deleteDeal()">🗑️ حذف الصفقة</button>
+    </div>
+
+    <!-- Admin Deals -->
+    <div class="sec-card">
+      <div class="sec-head">طلبات الأدمن</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>رقم الصفقة</th><th>الاسم</th><th>إثبات</th><th>الحالة</th><th>تعديل</th><th>مسح</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Packages -->
+    <div class="sec-card">
+      <div class="sec-head">إدارة الباقات</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div><label class="pkg-lbl">مبلغ الاشتراك (جنيه)</label><input class="pkg-inp" id="pkgAmount" type="number" placeholder="750"></div>
+        <div><label class="pkg-lbl">مبلغ الاستلام (جنيه)</label><input class="pkg-inp" id="pkgReceive" type="number" placeholder="4150"></div>
+      </div>
+      <button class="btn-add" onclick="addPackage()">➕ إضافة باقة</button>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>مبلغ الاشتراك</th><th>مبلغ الاستلام</th><th>مسح</th></tr></thead>
+          <tbody id="pkgRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Client Subs -->
+    <div class="sec-card">
+      <div class="sec-head">طلبات الاشتراك (العملاء)</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>رقم الصفقة</th><th>الاسم</th><th>إثبات</th><th>الحالة</th><th>تعديل</th><th>مسح</th></tr></thead>
+          <tbody id="subRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Archive -->
+    <div class="sec-card">
+      <div class="sec-head" style="cursor:pointer" onclick="toggleArchive()">
+        🗄️ الأرشيف <span id="archTgl" style="font-size:10px;color:var(--muted);margin-right:8px">▼ عرض</span>
+      </div>
+      <div id="archSec" style="display:none">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>رقم الصفقة</th><th>الاسم</th><th>إثبات</th><th>الحالة</th><th>استعادة</th><th>مسح نهائي</th></tr></thead>
+            <tbody id="archRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div id="modal">
+  <div class="modal-in">
+    <img id="proofImg" src="" alt="إثبات التحويل">
+    <br>
+    <button class="btn-close-modal" onclick="closeModal()">إغلاق</button>
+  </div>
+</div>
+
+<script>
+const FB={apiKey:"AIzaSyCQreNBjTck897PId442n2xKmHmmnjRbuE",authDomain:"platform-xm.firebaseapp.com",projectId:"platform-xm",storageBucket:"platform-xm.firebasestorage.app",messagingSenderId:"762614490463",appId:"1:762614490463:web:59d233760c58817d88c2ea"};
+firebase.initializeApp(FB);
+const auth=firebase.auth(),db=firebase.firestore();
+
+function login(){
+  const e=document.getElementById("email").value.trim(),p=document.getElementById("password").value.trim();
+  auth.signInWithEmailAndPassword(e,p).then(()=>{
+    document.getElementById("loginWrap").style.display="none";
+    document.getElementById("panel").style.display="block";
+    loadDeals();loadSubscriptions();loadPackages();
+  }).catch(e=>alert("خطأ: "+e.message));
+}
+
+const STATUS_OPTIONS=["الصفقة قيد الانتظار","في انتظار سداد مبلغ الإيداع","في انتظار مراجعة الإدارة","قيد المراجعة","قيد الانتظار","تم السداد","مرفوض"];
+
+function buildRow(doc,col){
+  const d=doc.data(),id=doc.id;
+  const opts=STATUS_OPTIONS.map(s=>`<option ${d.status===s?"selected":""}>${s}</option>`).join("");
+  return `<tr>
+    <td class="deal-id">${d.dealId||id}</td>
+    <td style="color:var(--text)">${d.name||"—"}</td>
+    <td>${d.paymentProof?`<button class="btn-sm btn-view" onclick="viewProof('${d.paymentProof}')">عرض</button>`:`<span class="no-proof">—</span>`}</td>
+    <td><select class="st-sel" onchange="db.collection('${col}').doc('${id}').update({status:this.value})">${opts}</select></td>
+    <td><button class="btn-sm btn-view" onclick="${col==='deals'?`fillForm('${id}')`:`alert('رقم: ${d.dealId||id}')`}">✏️</button></td>
+    <td>
+      <button class="btn-sm btn-arch" onclick="archiveDeal('${id}')">🗄️</button>
+      <button class="btn-sm btn-del" onclick="if(confirm('مسح؟'))db.collection('${col}').doc('${id}').delete()">🗑️</button>
+    </td>
+  </tr>`;
+}
+
+function loadDeals(){
+  const render=snap=>{
+    let h="",cnt=0;
+    snap.forEach(doc=>{if(doc.data().source==="admin"){h+=buildRow(doc,"deals");cnt++;}});
+    document.getElementById("rows").innerHTML=h||`<tr><td colspan="6" style="color:var(--muted);padding:20px;text-align:center">لا توجد طلبات أدمن</td></tr>`;
+    document.getElementById("stDeals").innerText=cnt;
+  };
+  db.collection("deals").orderBy("createdAt","desc").onSnapshot(render,()=>db.collection("deals").onSnapshot(render));
+}
+
+function loadSubscriptions(){
+  let clientDeals=[],subscriptions=[];
+  const renderAll=()=>{
+    const all=[...clientDeals,...subscriptions];
+    document.getElementById("stSubs").innerText=all.length;
+    if(!all.length){document.getElementById("subRows").innerHTML=`<tr><td colspan="6" style="color:var(--muted);padding:20px;text-align:center">لا توجد طلبات اشتراك</td></tr>`;return;}
+    document.getElementById("subRows").innerHTML=all.map(({id,d,col})=>buildRow({id,data:()=>d},col)).join("");
+  };
+  db.collection("deals").orderBy("createdAt","desc").onSnapshot(snap=>{clientDeals=[];snap.forEach(doc=>{if(doc.data().source!=="admin")clientDeals.push({id:doc.id,d:doc.data(),col:"deals"});});renderAll();},()=>db.collection("deals").onSnapshot(snap=>{clientDeals=[];snap.forEach(doc=>{if(doc.data().source!=="admin")clientDeals.push({id:doc.id,d:doc.data(),col:"deals"});});renderAll();}));
+  db.collection("subscriptions").orderBy("createdAt","desc").onSnapshot(snap=>{subscriptions=[];snap.forEach(doc=>subscriptions.push({id:doc.id,d:doc.data(),col:"subscriptions"}));renderAll();},()=>db.collection("subscriptions").onSnapshot(snap=>{subscriptions=[];snap.forEach(doc=>subscriptions.push({id:doc.id,d:doc.data(),col:"subscriptions"}));renderAll();}));
+}
+
+function loadPackages(){
+  db.collection("packages").orderBy("amount").onSnapshot(snap=>{
+    let h="",cnt=0;
+    snap.forEach(doc=>{const d=doc.data();cnt++;h+=`<tr><td style="color:var(--gold);font-family:'Cinzel',serif">${Number(d.amount).toLocaleString()} ج</td><td style="color:var(--green)">${Number(d.receive).toLocaleString()} ج</td><td><button class="btn-sm btn-del" onclick="deletePackage('${doc.id}')">🗑️ مسح</button></td></tr>`;});
+    document.getElementById("pkgRows").innerHTML=h||`<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:16px">لا توجد باقات</td></tr>`;
+    document.getElementById("stPkgs").innerText=cnt;
+  });
+}
+
+async function addPackage(){
+  const amount=Number(document.getElementById("pkgAmount").value),receive=Number(document.getElementById("pkgReceive").value);
+  if(!amount||!receive){alert("أدخل مبلغ الاشتراك والاستلام");return;}
+  await db.collection("packages").add({amount,receive,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  document.getElementById("pkgAmount").value="";document.getElementById("pkgReceive").value="";
+}
+function deletePackage(id){if(confirm("مسح الباقة؟"))db.collection("packages").doc(id).delete();}
+
+function fillForm(id){
+  db.collection("deals").doc(id).get().then(doc=>{
+    if(!doc.exists)return;const d=doc.data();
+    document.getElementById("dealId").value=id;
+    document.getElementById("name").value=d.name||"";
+    document.getElementById("investment").value=d.investment||"";
+    document.getElementById("profit").value=d.profit||"";
+    document.getElementById("receipt").value=d.receipt||"";
+    document.getElementById("fees").value=d.fees||"";
+    document.getElementById("hours").value=d.deadlineMinutes||(d.deadlineHours?d.deadlineHours*60:"");
+    document.getElementById("paymentOpen").value=d.paymentOpen?"true":"false";
+    document.getElementById("dealId").scrollIntoView({behavior:"smooth",block:"center"});
+  });
+}
+
+function saveDeal(){
+  const id=document.getElementById("dealId").value.trim();if(!id)return alert("ادخل رقم الصفقة");
+  const fees=Number(document.getElementById("fees").value),paymentOpen=document.getElementById("paymentOpen").value==="true";
+  let status="الصفقة قيد الانتظار";
+  if(fees>0&&paymentOpen)status="في انتظار سداد مبلغ الإيداع";
+  db.collection("deals").doc(id).set({dealId:id,name:document.getElementById("name").value,investment:Number(document.getElementById("investment").value),profit:Number(document.getElementById("profit").value),fees,receipt:document.getElementById("receipt").value,deadlineMinutes:Number(document.getElementById("hours").value),paymentOpen,status,source:"admin",paymentStart:firebase.firestore.FieldValue.serverTimestamp(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).then(()=>alert("✅ تم حفظ الصفقة"));
+}
+
+function deleteDeal(){
+  const id=document.getElementById("dealId").value.trim();if(!id)return;
+  if(confirm("أرشفة الصفقة؟"))archiveDeal(id).then(()=>alert("🗄️ تم أرشفة الصفقة"));
+}
+
+async function archiveDeal(id){
+  if(!confirm("أرشفة الصفقة "+id+"؟"))return;
+  const snap=await db.collection("deals").doc(id).get();if(!snap.exists)return;
+  await db.collection("archived_deals").doc(id).set({...snap.data(),archivedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  await db.collection("deals").doc(id).delete();
+}
+
+async function restoreDeal(id){
+  if(!confirm("استعادة الصفقة "+id+"؟"))return;
+  const snap=await db.collection("archived_deals").doc(id).get();if(!snap.exists)return;
+  await db.collection("deals").doc(id).set(snap.data());
+  await db.collection("archived_deals").doc(id).delete();
+}
+
+function toggleArchive(){
+  const sec=document.getElementById("archSec"),lbl=document.getElementById("archTgl");
+  if(sec.style.display==="none"){sec.style.display="block";lbl.innerText="▲ إخفاء";loadArchive();}
+  else{sec.style.display="none";lbl.innerText="▼ عرض";}
+}
+
+function loadArchive(){
+  db.collection("archived_deals").orderBy("archivedAt","desc").onSnapshot(snap=>{
+    let h="";
+    snap.forEach(doc=>{const d=doc.data();h+=`<tr style="opacity:.7"><td class="deal-id" style="color:var(--muted)">${doc.id}</td><td>${d.name||"—"}</td><td>${d.paymentProof?`<button class="btn-sm btn-view" onclick="viewProof('${d.paymentProof}')">عرض</button>`:`<span class="no-proof">—</span>`}</td><td style="font-size:11px">${d.status||"—"}</td><td><button class="btn-sm btn-rst" onclick="restoreDeal('${doc.id}')">↩️</button></td><td><button class="btn-sm btn-del" onclick="if(confirm('مسح نهائي؟'))db.collection('archived_deals').doc('${doc.id}').delete()">🗑️</button></td></tr>`;});
+    document.getElementById("archRows").innerHTML=h||`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">الأرشيف فارغ</td></tr>`;
+  });
+}
+
+function viewProof(url){document.getElementById("proofImg").src=url;document.getElementById("modal").style.display="flex";}
+function closeModal(){document.getElementById("modal").style.display="none";}
+</script>
+</body>
+</html>
